@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent } from "./components/ui/card";
+import { Button } from "./components/ui/button";
+import { Input } from "./components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select";
 
 /**
  * Dieser Code ist für eine React-App gedacht. Um die Anwendung vollständig bereitzustellen,
@@ -240,20 +240,4 @@ const App = () => {
           {role === "Admin" && (
             <div>
               <h2 className="text-xl font-bold mb-4">📋 Alle Einträge</h2>
-              {Array.from(new Set(entries.map((entry) => entry.owner))).map((owner) => (
-                <div key={owner} className="mb-6">
-                  <h3 className="text-lg font-bold text-blue-600">Benutzer: {owner} (Gesamt: {countEntriesByOwner(owner)})</h3>
-                  <div className="ml-4">
-                    {filteredEntries.filter((entry) => entry.owner === owner).map(renderEntry)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default App;
+              {Array.from(new Set
