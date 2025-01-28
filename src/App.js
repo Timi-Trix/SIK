@@ -4,54 +4,36 @@ import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select";
 
-/**
- * Dieser Code ist für eine React-App gedacht. Um die Anwendung vollständig bereitzustellen,
- * müssen die Projektdateien wie `package.json`, `index.html`, und andere unterstützende Dateien
- * erstellt und in der richtigen Ordnerstruktur organisiert werden.
- */
-
 const App = () => {
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [role, setRole] = useState(null);
   const [entries, setEntries] = useState(() => JSON.parse(localStorage.getItem("entries")) || []);
-  const [newEntry, setNewEntry] = useState({ notes: "", type: "", alias: "", isRenewal: false });
+  const [newEntry, setNewEntry] = useState({ notes: "", type: "", alias: "" });
   const [renewal, setRenewal] = useState({ username: "", password: "", type: "" });
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => localStorage.setItem("entries", JSON.stringify(entries)), [entries]);
 
   const handleLogin = (username, password) => {
-    const users = { Admin: "Admin", Test: "Test", Test1: "Test1" };
+    const users = { Admin: "Admin", Test: "Test" };
     if (users[username] === password) {
       setLoggedInUser(username);
       setRole(username === "Admin" ? "Admin" : "Friend");
     } else alert("Invalid credentials");
   };
 
-  const handleLogout = () => {
-    setLoggedInUser(null);
-    setRole(null);
-  };
-
-  const calculateRemainingDays = () => {
-    const today = new Date();
-    const endOfYear = new Date(today.getFullYear(), 11, 31);
-    return Math.ceil((endOfYear - today) / (1000 * 60 * 60 * 24));
-  };
-
-  const createOrRenewEntry = (isRenewal) => {
+  const createEntry = (isRenewal) => {
     const entry = {
-      username: isRenewal ? renewal.username : `${Math.floor(Math.random() * 900) + 100}-testtest-5`,
-      alias: isRenewal ? "Verlängert" : newEntry.alias,
+      username: isRenewal ? renewal.username : `user-${Date.now()}`,
+      alias: isRenewal ? "Renewed" : newEntry.alias,
       password: isRenewal ? renewal.password : Math.random().toString(36).slice(-8),
-      notes: isRenewal ? `Verlängert am ${new Date().toLocaleDateString()}` : newEntry.notes,
+      notes: isRenewal ? `Renewed on ${new Date().toLocaleDateString()}` : newEntry.notes,
       type: isRenewal ? renewal.type : newEntry.type,
       createdAt: new Date().toLocaleString(),
       owner: loggedInUser,
-      status: "Inaktiv",
-      paid: "Nein",
+      status: "Inactive",
+      paid: "No",
       remainingDays: null,
-      isRenewal,
     };
     setEntries([...entries, entry]);
     isRenewal ? setRenewal({ username: "", password: "", type: "" }) : setNewEntry({ notes: "", type: "", alias: "" });
@@ -60,21 +42,15 @@ const App = () => {
   const updateEntry = (index, key, value) => {
     const updatedEntries = [...entries];
     updatedEntries[index][key] = value;
-
-    if (key === "status" && value === "Aktiv") {
-      updatedEntries[index].remainingDays = calculateRemainingDays();
-    } else if (key === "status" && value === "Inaktiv") {
+    if (key === "status" && value === "Active") {
+      updatedEntries[index].remainingDays = Math.ceil((new Date(new Date().getFullYear(), 11, 31) - new Date()) / (1000 * 60 * 60 * 24));
+    } else if (key === "status") {
       updatedEntries[index].remainingDays = null;
     }
-
     setEntries(updatedEntries);
   };
 
-  const deleteEntry = (index) => {
-    setEntries(entries.filter((_, i) => i !== index));
-  };
-
-  const countEntriesByOwner = (owner) => entries.filter((entry) => entry.owner === owner).length;
+  const deleteEntry = (index) => setEntries(entries.filter((_, i) => i !== index));
 
   const filteredEntries = entries.filter(
     (entry) =>
@@ -84,38 +60,24 @@ const App = () => {
   );
 
   const renderEntry = (entry, index) => (
-    <Card
-      key={index}
-      className={`mb-2 ${entry.isRenewal ? "bg-yellow-100" : "bg-green-100"} border-2`}
-    >
+    <Card key={index} className={`mb-2 ${entry.status === "Active" ? "bg-green-100" : "bg-yellow-100"} border-2`}>
       <CardContent className="p-2">
         <div className="text-sm">
-          <p><strong>Benutzername:</strong> {entry.username}</p>
+          <p><strong>User:</strong> {entry.username}</p>
           <p><strong>Alias:</strong> {entry.alias}</p>
-          <p><strong>Passwort:</strong> {entry.password}</p>
-          <p><strong>Notizen:</strong> {entry.notes}</p>
-          <p><strong>Typ:</strong> {entry.type}</p>
-          <p><strong>Erstellt am:</strong> {entry.createdAt}</p>
-          <p><strong>Restliche Tage:</strong> {entry.remainingDays !== null ? entry.remainingDays : "Nicht verfügbar"}</p>
-          <p><strong>Status:</strong> <span style={{ color: entry.status === "Aktiv" ? "green" : "black" }}>{entry.status}</span></p>
-          <p><strong>Gezahlt:</strong> <span style={{ color: entry.paid === "Ja" ? "green" : "black" }}>{entry.paid}</span></p>
+          <p><strong>Status:</strong> {entry.status}</p>
+          <p><strong>Paid:</strong> {entry.paid}</p>
         </div>
         {role === "Admin" && (
           <div className="mt-2 flex gap-2">
-            <Button
-              onClick={() => updateEntry(index, "paid", entry.paid === "Ja" ? "Nein" : "Ja")}
-              className="bg-blue-500 text-white text-xs"
-            >
-              {entry.paid === "Ja" ? "Gezahlt zurücksetzen" : "Als gezahlt markieren"}
+            <Button onClick={() => updateEntry(index, "paid", entry.paid === "Yes" ? "No" : "Yes")} className="bg-blue-500 text-white text-xs">
+              {entry.paid === "Yes" ? "Mark Unpaid" : "Mark Paid"}
             </Button>
-            <Button
-              onClick={() => updateEntry(index, "status", entry.status === "Aktiv" ? "Inaktiv" : "Aktiv")}
-              className="bg-green-500 text-white text-xs"
-            >
-              {entry.status === "Aktiv" ? "Als inaktiv setzen" : "Als aktiv setzen"}
+            <Button onClick={() => updateEntry(index, "status", entry.status === "Active" ? "Inactive" : "Active")} className="bg-green-500 text-white text-xs">
+              {entry.status === "Active" ? "Deactivate" : "Activate"}
             </Button>
             <Button onClick={() => deleteEntry(index)} className="bg-red-500 text-white text-xs">
-              Eintrag löschen
+              Delete
             </Button>
           </div>
         )}
@@ -128,9 +90,9 @@ const App = () => {
       {!loggedInUser ? (
         <Card className="max-w-md mx-auto">
           <CardContent>
-            <h2 className="text-xl font-bold mb-4">🔐 Login</h2>
-            <Input placeholder="👤 Benutzername" id="username" className="mb-2" />
-            <Input placeholder="🔑 Passwort" type="password" id="password" className="mb-4" />
+            <h2 className="text-xl font-bold mb-4">Login</h2>
+            <Input placeholder="Username" id="username" className="mb-2" />
+            <Input placeholder="Password" type="password" id="password" className="mb-4" />
             <Button
               onClick={() =>
                 handleLogin(
@@ -139,105 +101,63 @@ const App = () => {
                 )
               }
             >
-              🚀 Login
+              Login
             </Button>
           </CardContent>
         </Card>
       ) : (
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl font-bold">Willkommen {loggedInUser} ({role}) 🎉</h1>
-            <Button onClick={handleLogout}>👋 Logout</Button>
+            <h1 className="text-2xl font-bold">Welcome {loggedInUser} ({role})</h1>
+            <Button onClick={() => setLoggedInUser(null)}>Logout</Button>
           </div>
 
-          <div className="mb-4">
-            <Input
-              placeholder="🔍 Suche in Einträgen..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full p-2 border rounded"
-            />
-          </div>
+          <Input
+            placeholder="Search entries..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="mb-4 w-full p-2 border rounded"
+          />
 
           {role === "Friend" && (
-            <div>
-              <h2 className="text-blue-500 text-xl font-bold mb-4">🎭 Willkommen bei TESTO</h2>
-              <Card className="mb-4">
-                <CardContent>
-                  <h2 className="text-xl font-bold mb-4">Abonnent anlegen</h2>
-                  <Select onValueChange={(value) => setNewEntry({ ...newEntry, type: value })}>
-                    <SelectTrigger className="w-2/3">
-                      <SelectValue placeholder="Abo auswählen" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Basic">Basic</SelectItem>
-                      <SelectItem value="Premium">Premium</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    placeholder="Spitzname"
-                    value={newEntry.alias}
-                    onChange={(e) => setNewEntry({ ...newEntry, alias: e.target.value })}
-                    className="w-2/3 p-1 border rounded mb-2"
-                  />
-                  <textarea
-                    placeholder="Notizen"
-                    value={newEntry.notes}
-                    onChange={(e) => setNewEntry({ ...newEntry, notes: e.target.value })}
-                    className="w-2/3 p-1 border rounded mb-2"
-                  />
-                  <div className="flex justify-center mt-2">
-                    <Button
-                      onClick={() => createOrRenewEntry(false)}
-                      className="bg-green-500 text-white"
-                    >
-                      ➕ Abonnent anlegen
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="mb-4">
-                <CardContent>
-                  <h2 className="text-xl font-bold mb-4">Abonnent verlängern</h2>
-                  <Input
-                    placeholder="Benutzername"
-                    value={renewal.username}
-                    onChange={(e) => setRenewal({ ...renewal, username: e.target.value })}
-                    className="w-2/3 p-1 border rounded mb-2"
-                  />
-                  <Input
-                    placeholder="Passwort"
-                    value={renewal.password}
-                    onChange={(e) => setRenewal({ ...renewal, password: e.target.value })}
-                    className="w-2/3 p-1 border rounded mb-2"
-                  />
-                  <Select onValueChange={(value) => setRenewal({ ...renewal, type: value })}>
-                    <SelectTrigger className="w-2/3">
-                      <SelectValue placeholder="Abo auswählen" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Basic">Basic</SelectItem>
-                      <SelectItem value="Premium">Premium</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <div className="flex justify-center mt-2">
-                    <Button
-                      onClick={() => createOrRenewEntry(true)}
-                      className="bg-yellow-500 text-white"
-                    >
-                      🔄 Abonnement verlängern
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <h2 className="text-xl font-bold mb-2">Meine Einträge (Gesamt: {countEntriesByOwner(loggedInUser)})</h2>
-              {filteredEntries.filter((entry) => entry.owner === loggedInUser).map(renderEntry)}
-            </div>
+            <Card className="mb-4">
+              <CardContent>
+                <h2 className="text-xl font-bold mb-4">Create Entry</h2>
+                <Input
+                  placeholder="Alias"
+                  value={newEntry.alias}
+                  onChange={(e) => setNewEntry({ ...newEntry, alias: e.target.value })}
+                  className="mb-2"
+                />
+                <textarea
+                  placeholder="Notes"
+                  value={newEntry.notes}
+                  onChange={(e) => setNewEntry({ ...newEntry, notes: e.target.value })}
+                  className="mb-2 w-full p-2 border rounded"
+                />
+                <Select onValueChange={(value) => setNewEntry({ ...newEntry, type: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Basic">Basic</SelectItem>
+                    <SelectItem value="Premium">Premium</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button onClick={() => createEntry(false)} className="mt-4 bg-green-500 text-white">
+                  Create
+                </Button>
+              </CardContent>
+            </Card>
           )}
 
-          {role === "Admin" && (
-            <div>
-              <h2 className="text-xl font-bold mb-4">📋 Alle Einträge</h2>
-              {Array.from(new Set
+          <div>
+            {filteredEntries.map(renderEntry)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default App;
