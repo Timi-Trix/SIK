@@ -1,8 +1,32 @@
 import React, { useState, useEffect } from "react";
-import { Card, CardContent } from "./components/ui/card";
-import { Button } from "./components/ui/button";
-import { Input } from "./components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select";
+
+// Dummy components to resolve missing imports
+export const Card = ({ children, className }) => <div className={`card ${className}`}>{children}</div>;
+export const CardContent = ({ children }) => <div className="card-content">{children}</div>;
+export const Button = ({ children, onClick, className }) => (
+  <button onClick={onClick} className={`button ${className}`}>{children}</button>
+);
+export const Input = ({ placeholder, value, onChange, id, type = "text", className }) => (
+  <input
+    id={id}
+    type={type}
+    placeholder={placeholder}
+    value={value}
+    onChange={onChange}
+    className={`input ${className}`}
+  />
+);
+export const Select = ({ children, onValueChange }) => (
+  <select onChange={(e) => onValueChange(e.target.value)} className="select">
+    {children}
+  </select>
+);
+export const SelectTrigger = ({ children }) => <div className="select-trigger">{children}</div>;
+export const SelectValue = ({ placeholder }) => <span>{placeholder}</span>;
+export const SelectContent = ({ children }) => <div className="select-content">{children}</div>;
+export const SelectItem = ({ value, children }) => (
+  <option value={value}>{children}</option>
+);
 
 const App = () => {
   const [loggedInUser, setLoggedInUser] = useState(null);
