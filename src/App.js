@@ -1,25 +1,60 @@
 import React, { useState, useEffect } from "react";
-import { Card, CardContent } from "./components/ui/card";
-import { Button } from "./components/ui/button";
-import { Input } from "./components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select";
+import {
+  Container,
+  Typography,
+  Grid,
+  AppBar,
+  Toolbar,
+  Button,
+  Divider,
+  Snackbar,
+  IconButton,
+  Menu,
+  MenuItem,
+} from "@mui/material";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import { styled } from "@mui/system";
+import LoginForm from "./LoginForm";
+import EntryList from "./EntryList";
+
+// 🔹 Styling
+const StyledContainer = styled(Container)({
+  backgroundColor: "#e0e7ff",
+  minHeight: "100vh",
+  padding: "20px",
+  color: "#333",
+});
+
+const StyledAppBar = styled(AppBar)({
+  backgroundColor: "#3b82f6",
+});
+
+// 🔹 Benutzer-Emojis
+const userEmojis = {
+  Admin: "👑",
+  Test: "🚀",
+  Test1: "🎩",
+};
 
 const App = () => {
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [role, setRole] = useState(null);
-  const [entries, setEntries] = useState(() => JSON.parse(localStorage.getItem("entries")) || []);
-  const [newEntry, setNewEntry] = useState({ notes: "", type: "", alias: "" });
-  const [renewal, setRenewal] = useState({ username: "", password: "", type: "" });
-  const [searchTerm, setSearchTerm] = useState("");
+  const [entries, setEntries] = useState(
+    () => JSON.parse(localStorage.getItem("entries")) || []
+  );
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [anchorEl, setAnchorEl] = useState(null);
 
-  useEffect(() => localStorage.setItem("entries", JSON.stringify(entries)), [entries]);
-
+  // 🔹 Login-Logik
   const handleLogin = (username, password) => {
-    const users = { Admin: "Admin", Test: "Test" };
+    const users = { Admin: "Admin", Test: "Test", Test1: "Test1" };
     if (users[username] === password) {
       setLoggedInUser(username);
       setRole(username === "Admin" ? "Admin" : "Friend");
-    } else alert("Invalid credentials");
+    } else {
+      alert("❌ Ungültige Zugangsdaten");
+    }
   };
 
   const handleLogout = () => {
@@ -27,138 +62,53 @@ const App = () => {
     setRole(null);
   };
 
-  const createEntry = (isRenewal) => {
-    const entry = {
-      username: isRenewal ? renewal.username : `user-${Date.now()}`,
-      alias: isRenewal ? "Renewed" : newEntry.alias,
-      password: isRenewal ? renewal.password : Math.random().toString(36).slice(-8),
-      notes: isRenewal ? `Renewed on ${new Date().toLocaleDateString()}` : newEntry.notes,
-      type: isRenewal ? renewal.type : newEntry.type,
-      createdAt: new Date().toLocaleString(),
-      owner: loggedInUser,
-      status: "Inactive",
-      paid: "No",
-    };
-    setEntries([...entries, entry]);
-    isRenewal ? setRenewal({ username: "", password: "", type: "" }) : setNewEntry({ notes: "", type: "", alias: "" });
-  };
-
-  const updateEntry = (index, key, value) => {
-    const updatedEntries = [...entries];
-    updatedEntries[index][key] = value;
-    if (key === "status" && value === "Active") {
-      updatedEntries[index].remainingDays = Math.ceil(
-        (new Date(new Date().getFullYear(), 11, 31) - new Date()) / (1000 * 60 * 60 * 24)
-      );
-    } else if (key === "status") {
-      updatedEntries[index].remainingDays = null;
-    }
-    setEntries(updatedEntries);
-  };
-
-  const deleteEntry = (index) => setEntries(entries.filter((_, i) => i !== index));
-
-  const filteredEntries = entries.filter(
-    (entry) =>
-      entry.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.alias.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.notes.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const renderEntry = (entry, index) => (
-    <Card key={index} className={`mb-2 ${entry.status === "Active" ? "bg-green-100" : "bg-yellow-100"} border-2`}>
-      <CardContent>
-        <p><strong>Username:</strong> {entry.username}</p>
-        <p><strong>Alias:</strong> {entry.alias}</p>
-        <p><strong>Status:</strong> {entry.status}</p>
-        <p><strong>Paid:</strong> {entry.paid}</p>
-        {role === "Admin" && (
-          <div className="flex gap-2 mt-2">
-            <Button onClick={() => updateEntry(index, "paid", entry.paid === "Yes" ? "No" : "Yes")}>
-              {entry.paid === "Yes" ? "Mark Unpaid" : "Mark Paid"}
-            </Button>
-            <Button onClick={() => updateEntry(index, "status", entry.status === "Active" ? "Inactive" : "Active")}>
-              {entry.status === "Active" ? "Deactivate" : "Activate"}
-            </Button>
-            <Button onClick={() => deleteEntry(index)} className="bg-red-500 text-white">
-              Delete
-            </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
+  useEffect(() => {
+    localStorage.setItem("entries", JSON.stringify(entries));
+  }, [entries]);
 
   return (
-    <div className="p-4">
-      {!loggedInUser ? (
-        <Card className="max-w-md mx-auto">
-          <CardContent>
-            <h2 className="text-xl font-bold mb-4">Login</h2>
-            <Input placeholder="Username" id="username" className="mb-2" />
-            <Input placeholder="Password" type="password" id="password" className="mb-4" />
-            <Button
-              onClick={() =>
-                handleLogin(
-                  document.getElementById("username").value,
-                  document.getElementById("password").value
-                )
-              }
+    <StyledContainer>
+      <StyledAppBar position="static">
+        <Toolbar>
+          <Typography variant="h6">Eintragsverwaltung</Typography>
+          {loggedInUser && (
+            <Typography
+              variant="h6"
+              style={{ marginLeft: "auto", marginRight: "20px" }}
             >
-              Login
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div>
-          <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl font-bold">Welcome {loggedInUser} ({role})</h1>
-            <Button onClick={handleLogout}>Logout</Button>
-          </div>
-
-          <Input
-            placeholder="Search entries..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="mb-4 w-full p-2 border rounded"
-          />
-
-          {role === "Friend" && (
-            <Card className="mb-4">
-              <CardContent>
-                <h2 className="text-xl font-bold mb-4">Create Entry</h2>
-                <Input
-                  placeholder="Alias"
-                  value={newEntry.alias}
-                  onChange={(e) => setNewEntry({ ...newEntry, alias: e.target.value })}
-                  className="mb-2"
-                />
-                <textarea
-                  placeholder="Notes"
-                  value={newEntry.notes}
-                  onChange={(e) => setNewEntry({ ...newEntry, notes: e.target.value })}
-                  className="w-full mb-2 p-2 border rounded"
-                />
-                <Select onValueChange={(value) => setNewEntry({ ...newEntry, type: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Basic">Basic</SelectItem>
-                    <SelectItem value="Premium">Premium</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button onClick={() => createEntry(false)} className="mt-4 bg-green-500 text-white">
-                  Save Entry
-                </Button>
-              </CardContent>
-            </Card>
+              {userEmojis[loggedInUser]} {loggedInUser}
+            </Typography>
           )}
+          {loggedInUser && (
+            <Button onClick={handleLogout} color="inherit">
+              🔓 Logout
+            </Button>
+          )}
+        </Toolbar>
+      </StyledAppBar>
 
-          <div>{filteredEntries.map(renderEntry)}</div>
-        </div>
+      {!loggedInUser ? (
+        <Grid container justifyContent="center" style={{ marginTop: "20px" }}>
+          <Grid item xs={12} sm={6} md={4}>
+            <LoginForm handleLogin={handleLogin} />
+          </Grid>
+        </Grid>
+      ) : (
+        <EntryList
+          entries={entries}
+          setEntries={setEntries}
+          role={role}
+          loggedInUser={loggedInUser}
+        />
       )}
-    </div>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        message={snackbarMessage}
+      />
+    </StyledContainer>
   );
 };
 
